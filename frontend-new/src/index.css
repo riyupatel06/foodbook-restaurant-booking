@@ -1,0 +1,209 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  --bg-0: #050816;
+  --bg-1: #08111f;
+  --panel: rgba(10, 17, 32, 0.72);
+  --panel-strong: rgba(12, 21, 39, 0.92);
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --text: #d4d9e6;
+  --text-soft: #9aa4b7;
+  --accent: #ff9f43;
+  --accent-2: #58c7ff;
+  --accent-3: #ff6b8b;
+  --shadow-lg: 0 30px 80px rgba(0, 0, 0, 0.4);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(255, 159, 67, 0.18), transparent 30%),
+    radial-gradient(circle at top right, rgba(88, 199, 255, 0.16), transparent 28%),
+    radial-gradient(circle at bottom center, rgba(255, 107, 139, 0.14), transparent 26%),
+    linear-gradient(180deg, var(--bg-1), var(--bg-0));
+  font-family: "Manrope", sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(circle at center, black 55%, transparent 100%);
+  opacity: 0.35;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.font-display {
+  font-family: "Cormorant Garamond", serif;
+}
+
+.glass-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.glass-panel-strong {
+  background: var(--panel-strong);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+}
+
+.soft-border {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #fff2d2 0%, #ffb86b 45%, #7ad8ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.section-kicker {
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #f3a24a;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.page-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.lift-card {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+.lift-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.float-slow {
+  animation: float 7s ease-in-out infinite;
+}
+
+.float-slower {
+  animation: float 10s ease-in-out infinite;
+}
+
+.fade-up {
+  animation: fadeUp 700ms ease both;
+}
+
+.fade-up-delay-1 {
+  animation: fadeUp 700ms ease 120ms both;
+}
+
+.fade-up-delay-2 {
+  animation: fadeUp 700ms ease 240ms both;
+}
+
+.fade-up-delay-3 {
+  animation: fadeUp 700ms ease 360ms both;
+}
+
+.pulse-ring {
+  animation: pulseRing 3.8s ease-in-out infinite;
+}
+
+.page-transition {
+  animation: pageEnter 560ms ease both;
+}
+
+.bg-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(12px);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(-12px) translateX(6px);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseRing {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.9;
+  }
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}

@@ -1,0 +1,67 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800;900&display=swap");
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  --vendor-bg: #100b0a;
+  --vendor-panel: #17100f;
+  --vendor-line: rgba(255, 255, 255, 0.1);
+  --vendor-accent: #ff6b35;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(255, 107, 53, 0.2), transparent 24%),
+    radial-gradient(circle at 90% 20%, rgba(255, 181, 115, 0.12), transparent 24%),
+    linear-gradient(180deg, #160f0e 0%, var(--vendor-bg) 100%);
+  color: #f8fafc;
+  font-family: "Manrope", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.25;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.font-display {
+  font-family: "Cormorant Garamond", serif;
+}
+
+.section-kicker {
+  color: #ffaf74;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
