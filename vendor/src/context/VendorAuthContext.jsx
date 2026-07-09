@@ -22,6 +22,7 @@ function readStoredVendor() {
 
 export function VendorAuthProvider({ children }) {
   const [vendor, setVendor] = useState(() => readStoredVendor());
+  const [isVendorReady, setIsVendorReady] = useState(() => !readStoredVendor()?.token);
 
   useEffect(() => {
     if (vendor) {
@@ -60,18 +61,30 @@ export function VendorAuthProvider({ children }) {
 
   const refreshVendor = useCallback(async () => {
     const token = vendor?.token ?? getVendorToken();
-    if (!token) return null;
+    if (!token) {
+      setIsVendorReady(true);
+      return null;
+    }
 
     const response = await apiGet("/vendor/me", token);
     setVendor((current) => ({ ...response, token: current?.token ?? token }));
+    setIsVendorReady(true);
     return response;
   }, [vendor?.token]);
 
   useEffect(() => {
-    if (!vendor?.token) return;
+    if (!vendor?.token) {
+      setIsVendorReady(true);
+      return;
+    }
+
+    setIsVendorReady(false);
 
     const timer = window.setTimeout(() => {
-      refreshVendor().catch(() => setVendor(null));
+      refreshVendor().catch(() => {
+        setVendor(null);
+        setIsVendorReady(true);
+      });
     }, 0);
     return () => window.clearTimeout(timer);
   }, [refreshVendor, vendor?.token]);
@@ -80,6 +93,7 @@ export function VendorAuthProvider({ children }) {
     () => ({
       vendor,
       token: vendor?.token ?? "",
+      isVendorReady,
       isVendorAuthenticated: Boolean(vendor),
       loginVendor,
       registerVendor,
@@ -88,7 +102,7 @@ export function VendorAuthProvider({ children }) {
       refreshVendor,
       logoutVendor: () => setVendor(null),
     }),
-    [refreshVendor, vendor],
+    [isVendorReady, refreshVendor, vendor],
   );
 
   return <VendorAuthContext.Provider value={value}>{children}</VendorAuthContext.Provider>;

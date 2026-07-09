@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import { connectDatabase } from "./config/database.js";
 import { User } from "./models/User.js";
+import { Admin } from "./admin/models/Admin.js";
 import { Restaurant } from "./models/Restaurant.js";
 import { MenuItem } from "./models/MenuItem.js";
 import { Table } from "./models/Table.js";
@@ -96,6 +97,7 @@ const tables = [
 async function ensureCollections() {
   const names = [
     "users",
+    "admins",
     "restaurants",
     "menuitems",
     "tables",
@@ -124,18 +126,26 @@ async function run() {
 
   await Promise.all([
     User.deleteMany({}),
+    Admin.deleteMany({}),
     Restaurant.deleteMany({}),
     MenuItem.deleteMany({}),
     Table.deleteMany({}),
   ]);
 
   const passwordHash = await bcrypt.hash("Riya2005", 10);
+  const adminPasswordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD || "Admin@123", 10);
   await User.create({
     name: "Riya Patel",
     email: "riya@gmail.com",
     phone: "9876543210",
     passwordHash,
     role: "user",
+  });
+  await Admin.create({
+    name: "Super Admin",
+    email: (process.env.ADMIN_EMAIL || "admin@foodbook.app").toLowerCase(),
+    phone: "0000000000",
+    passwordHash: adminPasswordHash,
   });
 
   const restaurantDocs = await Restaurant.insertMany(restaurants);
@@ -167,7 +177,7 @@ async function run() {
   );
 
   console.log("Seeded Atlas collections:");
-  console.log(["users", "restaurants", "menuitems", "tables", "bookings", "payments", "invoices", "feedback", "notifications", "ailogs"].join(", "));
+  console.log(["users", "admins", "restaurants", "menuitems", "tables", "bookings", "payments", "invoices", "feedback", "notifications", "ailogs"].join(", "));
 
   await mongoose.disconnect();
 }

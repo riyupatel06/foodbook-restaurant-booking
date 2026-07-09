@@ -12,12 +12,16 @@ import { Payment } from "../src/models/Payment.js";
 import { Restaurant } from "../src/models/Restaurant.js";
 import { Table } from "../src/models/Table.js";
 import { User } from "../src/models/User.js";
+import { Admin } from "../src/admin/models/Admin.js";
 import { Vendor } from "../src/vendor/models/Vendor.js";
 import { Waitlist } from "../src/vendor/models/Waitlist.js";
 import { memoryUsers } from "../src/utils/memoryStore.js";
 
-const originalFindOne = User.findOne;
-const originalCreate = User.create;
+const originalUserFindOne = User.findOne;
+const originalUserCreate = User.create;
+const originalAdminFindOne = Admin.findOne;
+const originalAdminCreate = Admin.create;
+const originalAdminFindById = Admin.findById;
 const originalBookingFind = Booking.find;
 const originalBookingFindOne = Booking.findOne;
 const originalBookingCreate = Booking.create;
@@ -43,8 +47,14 @@ function resetEnv() {
 }
 
 function restoreUserModel() {
-  User.findOne = originalFindOne;
-  User.create = originalCreate;
+  User.findOne = originalUserFindOne;
+  User.create = originalUserCreate;
+}
+
+function restoreAdminModel() {
+  Admin.findOne = originalAdminFindOne;
+  Admin.create = originalAdminCreate;
+  Admin.findById = originalAdminFindById;
 }
 
 function restoreVendorModel() {
@@ -94,6 +104,7 @@ function restoreWaitlistModel() {
 test.beforeEach(() => {
   memoryUsers.clear();
   restoreUserModel();
+  restoreAdminModel();
   restoreVendorModel();
   restoreBookingModel();
   restoreInvoiceModel();
@@ -108,6 +119,7 @@ test.beforeEach(() => {
 
 test.after(() => {
   restoreUserModel();
+  restoreAdminModel();
   restoreVendorModel();
   restoreBookingModel();
   restoreInvoiceModel();
@@ -170,8 +182,8 @@ test("rejects invalid customer password", async () => {
 });
 
 test("allows admin login using environment credentials", async () => {
-  User.findOne = async () => null;
-  User.create = async (payload) => ({ _id: "admin-1", ...payload });
+  Admin.findOne = async () => null;
+  Admin.create = async (payload) => ({ _id: "admin-1", role: "admin", ...payload });
 
   const response = await request(app).post("/api/admin/login").send({
     email: "admin@foodbook.app",

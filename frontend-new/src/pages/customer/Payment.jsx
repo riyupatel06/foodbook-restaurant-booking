@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FaBell, FaEnvelope, FaMobileAlt, FaShieldAlt, FaWallet } from "react-icons/fa";
 import { apiPost, getToken } from "../../lib/api";
+import { useAuth } from "../../context/AuthContext";
 
 function parseItems(rawItems) {
   if (!rawItems) return [];
@@ -19,6 +20,7 @@ function parseItems(rawItems) {
 export default function Payment() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { isAuthenticated, isAuthReady, logout } = useAuth();
   const [method, setMethod] = useState("razorpay");
   const [status, setStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -45,6 +47,13 @@ export default function Payment() {
   );
 
   const handlePayment = async () => {
+    if (!isAuthReady) return;
+
+    if (!isAuthenticated) {
+      navigate(`/login?next=${encodeURIComponent(`/payment?${searchParams.toString()}`)}`);
+      return;
+    }
+
     setSubmitting(true);
     setStatus(null);
 
@@ -124,6 +133,11 @@ export default function Payment() {
       confirmationParams.set("confirmed", "true");
       navigate(`/booking-success?${confirmationParams.toString()}`, { replace: true });
     } catch (error) {
+      if (error?.statusCode === 401 || error?.statusCode === 404) {
+        logout();
+        navigate(`/login?next=${encodeURIComponent(`/payment?${searchParams.toString()}`)}`, { replace: true });
+        return;
+      }
       setStatus({ type: "error", message: error.message || "Payment succeeded, but booking confirmation failed" });
     } finally {
       setSubmitting(false);
@@ -233,10 +247,10 @@ export default function Payment() {
             <button
               type="button"
               onClick={handlePayment}
-              disabled={submitting}
+              disabled={submitting || !isAuthReady}
               className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-[#ff9f43] to-[#ff6b8b] px-5 py-3 font-semibold text-slate-950 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {submitting ? "Confirming booking..." : "Pay and confirm booking"}
+              {submitting ? "Confirming booking..." : !isAuthReady ? "Checking session..." : "Pay and confirm booking"}
             </button>
           </div>
         </div>

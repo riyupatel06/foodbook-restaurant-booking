@@ -22,6 +22,7 @@ function readStoredUser() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
+  const [isAuthReady, setIsAuthReady] = useState(() => !readStoredUser()?.token);
 
   useEffect(() => {
     if (user) {
@@ -53,10 +54,33 @@ export function AuthProvider({ children }) {
   };
 
   const refreshProfile = useCallback(async () => {
-    const profile = await apiGet("/auth/me", user?.token ?? "");
+    const token = user?.token ?? "";
+    if (!token) {
+      setIsAuthReady(true);
+      return null;
+    }
+
+    const profile = await apiGet("/auth/me", token);
     setUser((current) => (current ? { ...current, ...profile } : current));
+    setIsAuthReady(true);
     return profile;
   }, [user?.token]);
+
+  useEffect(() => {
+    if (!user?.token) {
+      setIsAuthReady(true);
+      return;
+    }
+
+    setIsAuthReady(false);
+    const timer = window.setTimeout(() => {
+      refreshProfile().catch(() => {
+        setUser(null);
+        setIsAuthReady(true);
+      });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [refreshProfile, user?.token]);
 
   const updateProfile = useCallback(async (payload) => {
     const response = await apiPatch("/auth/me", payload, user?.token ?? "");
@@ -73,6 +97,7 @@ export function AuthProvider({ children }) {
   const value = useMemo(
     () => ({
       user,
+      isAuthReady,
       isAuthenticated: Boolean(user),
       login: loginUser,
       register: registerUser,
@@ -83,7 +108,7 @@ export function AuthProvider({ children }) {
       resetPasswordWithOtp,
       logout: () => setUser(null),
     }),
-    [changePassword, refreshProfile, updateProfile, user],
+    [changePassword, isAuthReady, refreshProfile, updateProfile, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

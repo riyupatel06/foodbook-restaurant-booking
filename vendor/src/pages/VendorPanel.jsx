@@ -336,7 +336,7 @@ function MiniBars({ values, labels = [] }) {
 
 export default function VendorPanel() {
   const navigate = useNavigate();
-  const { vendor, isVendorAuthenticated, logoutVendor, updateVendor } = useVendorAuth();
+  const { vendor, isVendorAuthenticated, isVendorReady, logoutVendor, updateVendor } = useVendorAuth();
   const [active, setActive] = useState("dashboard");
   const [dashboard, setDashboard] = useState(emptyDashboard);
   const [status, setStatus] = useState("loading");
@@ -421,6 +421,17 @@ export default function VendorPanel() {
     confirmPassword: "",
   });
 
+  const handleVendorSessionError = useCallback((error, fallbackMessage = "Action failed") => {
+    if (error?.statusCode === 401 || error?.statusCode === 404) {
+      logoutVendor();
+      navigate("/login", { replace: true });
+      return true;
+    }
+
+    setMessage({ type: "error", text: error.message || fallbackMessage });
+    return false;
+  }, [logoutVendor, navigate]);
+
   const loadDashboard = useCallback(async () => {
     setStatus("loading");
     try {
@@ -429,11 +440,20 @@ export default function VendorPanel() {
       setToken(getVendorToken());
       setStatus("ready");
     } catch (error) {
+      if (error?.statusCode === 401 || error?.statusCode === 404) {
+        logoutVendor();
+        navigate("/login", { replace: true });
+        return;
+      }
       setStatus(error.message || "Unable to load vendor dashboard");
     }
-  }, [analyticsPeriod]);
+  }, [analyticsPeriod, logoutVendor, navigate]);
 
   useEffect(() => {
+    if (!isVendorReady) {
+      setStatus("loading");
+      return;
+    }
     if (!isVendorAuthenticated) {
       navigate("/login", { replace: true });
       return;
@@ -442,7 +462,7 @@ export default function VendorPanel() {
       void loadDashboard();
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [isVendorAuthenticated, loadDashboard, navigate]);
+  }, [isVendorAuthenticated, isVendorReady, loadDashboard, navigate]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -506,7 +526,7 @@ export default function VendorPanel() {
       setMessage({ type: "success", text: success });
       await loadDashboard();
     } catch (error) {
-      setMessage({ type: "error", text: error.message || "Action failed" });
+      handleVendorSessionError(error, "Action failed");
     }
   };
 
@@ -517,7 +537,7 @@ export default function VendorPanel() {
       setMessage({ type: "success", text: success });
       await loadDashboard();
     } catch (error) {
-      setMessage({ type: "error", text: error.message || "Action failed" });
+      handleVendorSessionError(error, "Action failed");
     }
   };
 
@@ -635,7 +655,7 @@ export default function VendorPanel() {
       setMessage({ type: "success", text: success });
       await loadDashboard();
     } catch (error) {
-      setMessage({ type: "error", text: error.message || "Action failed" });
+      handleVendorSessionError(error, "Action failed");
     }
   };
 

@@ -47,54 +47,6 @@ export default function VendorLogin() {
     }
   };
 
-  useEffect(() => {
-    const scriptId = "google-identity-script-vendor";
-    const existing = document.getElementById(scriptId);
-    const start = () => {
-      if (!window.google?.accounts?.id || !import.meta.env.VITE_GOOGLE_CLIENT_ID) return;
-      window.google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-        callback: async (response) => {
-          try {
-            setGoogleStatus(null);
-            await loginWithGoogle(response.credential);
-            navigate("/", { replace: true });
-          } catch (error) {
-            setGoogleStatus(error.message || "Google sign-in failed");
-          }
-        },
-      });
-      window.google.accounts.id.renderButton(document.getElementById("vendor-google-login"), {
-        theme: "outline",
-        size: "large",
-        width: 320,
-        text: "signin_with",
-      });
-      setGoogleReady(true);
-    };
-
-    if (window.google?.accounts?.id) {
-      start();
-      return undefined;
-    }
-
-    if (!existing) {
-      const script = document.createElement("script");
-      script.id = scriptId;
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      script.onload = start;
-      document.body.appendChild(script);
-    } else {
-      existing.addEventListener("load", start);
-    }
-
-    return () => {
-      existing?.removeEventListener?.("load", start);
-    };
-  }, [loginWithGoogle, navigate]);
-
   return (
     <div className="min-h-screen bg-[#120c0b] text-white">
       <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-8 px-4 py-10 lg:grid-cols-[1.05fr_0.95fr]">

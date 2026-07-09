@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { body, validationResult } from "express-validator";
 import { User } from "../../models/User.js";
+import { Admin } from "../models/Admin.js";
 import { Vendor } from "../../vendor/models/Vendor.js";
 import { Waitlist } from "../../vendor/models/Waitlist.js";
 import { Restaurant } from "../../models/Restaurant.js";
@@ -136,14 +137,51 @@ function publicAdmin(admin) {
   };
 }
 
+function buildFallbackAdmin() {
+  const credentials = getAdminCredentials();
+  return {
+    _id: "env-admin",
+    name: "Super Admin",
+    email: credentials.email,
+    phone: "0000000000",
+    picture: "",
+    role: "admin",
+  };
+}
+
+async function migrateLegacyAdminIfPresent(email) {
+  const legacyAdmin = await User.findOne({ email, role: "admin" });
+  if (!legacyAdmin) return null;
+
+  const migratedAdmin = await Admin.create({
+    name: legacyAdmin.name,
+    email: legacyAdmin.email,
+    phone: legacyAdmin.phone || "0000000000",
+    picture: legacyAdmin.picture || "",
+    passwordHash: legacyAdmin.passwordHash,
+  });
+
+  await User.deleteOne({ _id: legacyAdmin._id });
+  return migratedAdmin;
+}
+
 async function findAdminFromRequest(request) {
+  if (!isDatabaseReady()) {
+    const credentials = getAdminCredentials();
+    const requestEmail = String(request.admin?.email ?? "").toLowerCase().trim();
+    if (request.admin?.role === "admin" && (!requestEmail || requestEmail === credentials.email)) {
+      return buildFallbackAdmin();
+    }
+    return null;
+  }
+
   if (request.admin?.id && /^[a-f\d]{24}$/i.test(String(request.admin.id))) {
-    const adminById = await User.findOne({ _id: request.admin.id, role: "admin" });
+    const adminById = await Admin.findById(request.admin.id);
     if (adminById) return adminById;
   }
 
   if (request.admin?.email) {
-    return User.findOne({ email: String(request.admin.email).toLowerCase().trim(), role: "admin" });
+    return Admin.findOne({ email: String(request.admin.email).toLowerCase().trim() });
   }
 
   return null;
@@ -305,17 +343,26 @@ router.post("/login", [body("email").isEmail(), body("password").notEmpty()], as
     if (normalizedEmail !== credentials.email) {
       return response.status(401).json({ message: "Invalid admin credentials" });
     }
-    if (!passwordMatchesEnv && !isDatabaseReady()) {
-      return response.status(401).json({ message: "Invalid admin credentials" });
+
+    if (!isDatabaseReady()) {
+      if (!passwordMatchesEnv) {
+        return response.status(401).json({ message: "Invalid admin credentials" });
+      }
+
+      const fallbackAdmin = buildFallbackAdmin();
+      return response.json({ token: createAdminToken(fallbackAdmin), admin: publicAdmin(fallbackAdmin) });
     }
 
-    let admin = await User.findOne({ email: credentials.email, role: "admin" });
+    let admin = await Admin.findOne({ email: credentials.email });
+    if (!admin) {
+      admin = await migrateLegacyAdminIfPresent(credentials.email);
+    }
     if (!admin && !passwordMatchesEnv) {
       return response.status(401).json({ message: "Invalid admin credentials" });
     }
 
     if (!admin) {
-      admin = await User.create({
+      admin = await Admin.create({
         name: "Super Admin",
         email: credentials.email,
         phone: "0000000000",
@@ -410,6 +457,34 @@ router.post(
 
 router.get("/dashboard", async (_request, response, next) => {
   try {
+    if (!isDatabaseReady()) {
+      return response.json({
+        summary: {
+          users: 0,
+          vendors: 0,
+          restaurants: 0,
+          bookings: 0,
+          tables: 0,
+          menuItems: 0,
+          payments: 0,
+          reviews: 0,
+          notifications: 0,
+          revenue: 0,
+          approvedRestaurants: 0,
+          pendingBookings: 0,
+        },
+        users: [],
+        vendors: [],
+        restaurants: [],
+        bookings: [],
+        tables: [],
+        menuItems: [],
+        payments: [],
+        reviews: [],
+        notifications: [],
+      });
+    }
+
     const [users, vendors, restaurants, bookings, tables, menuItems, payments, reviews, notifications] = await Promise.all([
       User.find().sort({ createdAt: -1 }),
       Vendor.find().sort({ createdAt: -1 }),
